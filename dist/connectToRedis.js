@@ -21,22 +21,30 @@ const connectToRedis = {
             yield server_1.client.set(`username:${username}`, password);
         });
     },
+    saveUsernamesAndPasswords(usersAndPasswords) {
+        return __awaiter(this, void 0, void 0, function* () {
+            for (const user of usersAndPasswords) {
+                const username = user[0];
+                const password = user[1];
+                yield server_1.client.set(`username:${username}`, password);
+            }
+        });
+    },
+    getUsernamesAndPasswords(usernames) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = {};
+            for (const username of usernames) {
+                const password = yield server_1.client.get(`username:${username}`);
+                console.log(password);
+            }
+            for (let i = 0; i < usernames.length; i++) {
+                console.log(i);
+                const password = yield server_1.client.get(`username:${usernames[i]}`);
+                console.log(password);
+                result[usernames[i]] = password;
+            }
+            return result;
+        });
+    }
 };
-// Example usage
-const username = 'john_doe';
-const password = 'super_secure_password';
-// Save password
-// connectToRedis.savePassword(username, password)
-//   .then(() => console.log(`Password for ${username} saved successfully`))
-//   .catch((error) => console.error(`Error saving password: ${error.message}`));
-// // Get password
-// connectToRedis.getPassword(username)
-//   .then((retrievedPassword) => {
-//     if (retrievedPassword !== null) {
-//       console.log(`Password for ${username}: ${retrievedPassword}`);
-//     } else {
-//       console.log(`Password for ${username} not found`);
-//     }
-//   })
-//   .catch((error) => console.error(`Error retrieving password: ${error.message}`));
 exports.default = connectToRedis;

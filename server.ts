@@ -2,6 +2,8 @@ import express, { Request, Response } from "express";
 import { createClient } from "redis";
 import connectToRedis from "./connectToRedis";
 
+
+
 const app = express();
 
 
@@ -11,18 +13,24 @@ config();
 
 const { EXPRESS_BASE_URL, EXPRESS_PORT } = process.env;
 export const client = createClient({
-    password: 'psKJpf9FLikITRvONKm3ERhMOzx9XQat',
+    password: '8114',
     socket: {
-        host: 'redis-18891.c274.us-east-1-3.ec2.cloud.redislabs.com',
-        port: 18891
+        host: '127.0.0.1',
+        port: 6379
     }
+    
 });
+
+
+
 
 const port = Number(EXPRESS_PORT);
 
 app.listen(port, () => {
     console.log((`listening on: ${EXPRESS_BASE_URL}' '${port}`));
     client.connect()
+    client.set('password_count',0)
+
         .then(() => console.log(("connected successfully to Redis client!!!")))
         .catch((error) => {
             if (error instanceof Error) {
@@ -30,17 +38,20 @@ app.listen(port, () => {
             }
         });
 
-    app.use(express.json())
+       
+        
+        
 
+    app.use(express.json());
 
-    app.get("/getOnePassword", async (req: Request, res: Response) => {
+    app.post("/getOnePassword", async (req: Request, res: Response) => {
         try {
-            const { Password } = req.body
-            const data = await connectToRedis.getPassword(Password)
+            const { username } = req.body
+            const data = await connectToRedis.getPassword(username)
             res.send(data);
 
         } catch (error) {
-            if (error instanceof Error) {                
+            if (error instanceof Error) {
                 console.log(error.message);
                 res.send(error.message);
             }
@@ -49,9 +60,10 @@ app.listen(port, () => {
 
     app.post("/saveOnePassword", async (req: Request, res: Response) => {
         try {
-            const { username , password } = req.body
-            const data = await connectToRedis.savePassword(username , password)
+            const { username, password } = req.body
+            const data = await connectToRedis.savePassword(username, password)
             res.send(data);
+            if (res.statusCode === 200) {}
 
         } catch (error) {
             if (error instanceof Error) {
@@ -59,16 +71,43 @@ app.listen(port, () => {
                 res.send(error.message);
             }
         }
+    })
+
+
+    app.post('/saveUsernamesAndPasswords', async (req: Request, res: Response) => { 
+        try {
+            const { data } = req.body;
+            if (!data || !Array.isArray(data)) {
+                return res.status(400).send("נתונים לא תקינים");
+            }            
+            const sendDate = await connectToRedis.saveUsernamesAndPasswords(data);
+            res.status(200).json({ message: "Usernames and passwords saved successfully" });
+        } catch (error) {
+            if (error instanceof Error) {
+                console.log(error.message);
+                res.status(500).send(error.message);
+            }
+        }
     });
-
-
     
+    app.post('/getUsernamesAndPasswords', async (req: Request, res: Response) => {
+        try {
+            const { body } = req;
+            // data.map((dataItem:any) => {console.log(dataItem);
+            // })
+            if (!body || !Array.isArray(body)) {
+                return res.status(400).send("Invalid data");
+            }
+            const sendDate = await connectToRedis.getUsernamesAndPasswords(body);
+            res.status(200).json(sendDate);
+        } catch (error) {
+            console.error('Error retrieving usernames and passwords from Redis');
+        }
+    });
+    
+
 });
 
 
-// git init
-// git add .
-// git commit -m "first commit"
-// git branch -M main
-// git remote add origin https://github.com/ChaimCymerman0548492309/Redis.git
-// git push -u origin main
+
+
